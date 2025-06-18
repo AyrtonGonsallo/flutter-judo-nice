@@ -50,7 +50,8 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Accueil'),
-        backgroundColor: Colors.white54,
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(1.0),
           child: Container(
@@ -62,7 +63,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 10),
-            child: Image.asset('images/icon_72x72.png', height: 50),
+            child: Image.asset('images/logo_blanc_transparent.png', height: 40),
           ),
         ],
       ),

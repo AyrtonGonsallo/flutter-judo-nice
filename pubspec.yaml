@@ -70,6 +70,8 @@ flutter:
       - images/logo_black.png
       - images/logo_f8f9ff.png
       - images/icon_72x72.png
+      - images/logo_blanc_transparent.png
+      - images/logo_noir_transparent.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

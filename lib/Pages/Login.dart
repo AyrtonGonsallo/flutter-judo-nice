@@ -215,7 +215,8 @@ class _LoginPageState extends State<LoginPage> {
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
         // change color while the other colors stay the same.
-        backgroundColor: Colors.white54,
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
@@ -230,7 +231,7 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 10),
-            child: Image.asset('images/icon_72x72.png', height: 50),
+            child: Image.asset('images/logo_blanc_transparent.png', height: 40),
           ),
         ],
       ),

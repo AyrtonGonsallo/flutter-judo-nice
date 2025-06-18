@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Controle de présence"
+        android:label="Admin OJ Nice"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

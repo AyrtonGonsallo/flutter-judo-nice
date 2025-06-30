@@ -14,14 +14,18 @@ void main() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final user = await DBHelper.getUser();
+  print(user);
+  final userId = user != null ? user['user_id'] : 0;
 
-  runApp(MyApp(isLoggedIn: user != null));
+
+  runApp(MyApp(isLoggedIn: user != null,userId:userId));
 }
 
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
-  const MyApp({super.key, required this.isLoggedIn});
+  final int userId;
+  const MyApp({super.key, required this.isLoggedIn, required this.userId});
 
   // This widget is the root of your application.
   @override
@@ -47,7 +51,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       home: isLoggedIn
-          ? HomePage()
+          ? HomePage(userId: userId,)
           : const LoginPage(title: 'Login'),
     );
   }

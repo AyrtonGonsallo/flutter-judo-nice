@@ -21,7 +21,8 @@ class DBHelper {
         prenom TEXT,
         email TEXT,
         role TEXT,
-        token TEXT
+        token TEXT,
+        user_id INTEGER
       )
     ''');
       },

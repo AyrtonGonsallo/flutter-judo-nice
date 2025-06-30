@@ -3,11 +3,14 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
+import '../Constants/ApiConstants.dart';
 import '../db_helper.dart';
 import 'Login.dart';
+import 'Courses.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int userId;
+  const HomePage({super.key, required this.userId});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -15,11 +18,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? utilisateur;
+  late int userId;
+  late String apiUrl;
 
   @override
   void initState() {
     super.initState(); // Appelé une seule fois au début
     _chargerUtilisateur(); // Appelle ta fonction async ici
+    userId = widget.userId;
+    apiUrl = ApiConstants.baseUrl;
   }
 
   Future<void> _chargerUtilisateur() async {
@@ -67,11 +74,42 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: Colors.black),
+              child: Column(
+                children: [
+                  Image(
+                      image: AssetImage("images/logo_blanc_transparent.png"),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child:
+                ListView(
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.book_online),
+                      title: Text("Mes cours"),
+                      onTap: (){
+                        Navigator.push(context,
+                          MaterialPageRoute(builder: (_)=>CoursesListPage(userId: userId))
+                        );
+                      },
+                    )
+                  ],
+                )
+            )
+          ],
+        ),
+      ),
       body: Center(
         child: Column(
           children: [
             Text(
-              'Bienvenue, ${utilisateur?['nom']} ${utilisateur?['prenom']} (${utilisateur?['role']})!',
+              'Bienvenue, ${userId} ${utilisateur?['nom']} ${utilisateur?['prenom']} (${utilisateur?['role']})!',
             ),
             TextButton(
               style: TextButton.styleFrom(

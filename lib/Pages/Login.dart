@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
+import '../Constants/ApiConstants.dart';
 import '../db_helper.dart';
 
 import 'Home.dart';
@@ -26,6 +27,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  late String apiUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    apiUrl = ApiConstants.baseUrl;
+  }
+
   void showPasswordResetDialog(BuildContext context) {
     final emailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -65,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
                   try {
                     final response = await http.post(
                       Uri.parse(
-                        'http://api-control.nash-project.name/api/auth/recuperer_utilisateur',
+                        '$apiUrl/api/auth/recuperer_utilisateur',
                       ),
                       headers: {'Content-Type': 'application/json'},
                       body: '{"email": "$email"}',
@@ -145,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         print("Infos de connexion :$email $password");
         final url = Uri.parse(
-          'https://api-control.nash-project.name/api/auth/login',
+          '$apiUrl/api/auth/login',
         );
 
         try {
@@ -174,10 +183,12 @@ class _LoginPageState extends State<LoginPage> {
               'email': data['email'],
               'role': data['role'], // si tu veux vraiment stocker le hash
               'token': data['token'],
+              'user_id': data['id'],
+
             });
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => HomePage()),
+              MaterialPageRoute(builder: (context) => HomePage(userId:data['id'])),
             );
           } else {
             final data = jsonDecode(response.body);

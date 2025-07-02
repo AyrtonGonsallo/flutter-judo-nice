@@ -1,7 +1,9 @@
 
 
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:appli_ojn/Pages/Courses.dart';
 import 'package:date_format/date_format.dart';
@@ -33,6 +35,9 @@ class _CourseCheckListPageState extends State<CourseCheckListPage> {
   late String apiUrl;
   late int userId;
   late int courseId;
+  String searchQuery = '';
+  bool sortAsc = true;
+  int sortColumnIndex = 0;
 
   @override
   void initState() {
@@ -63,27 +68,47 @@ class _CourseCheckListPageState extends State<CourseCheckListPage> {
   }
 
   Future<List<Cours>> fetchCours(int courseId) async {
-    final response = await http.get(Uri.parse("$apiUrl/api/dojo_cours/get_cours/$courseId"));
-    final data = jsonDecode(response.body) ;
-    print(data);
-    return  [Cours.fromJson(data)];
-
+    try {
+      final response = await http.get(Uri.parse("$apiUrl/api/dojo_cours/get_cours/$courseId"));
+      final data = jsonDecode(response.body) ;
+      print(data);
+      return  [Cours.fromJson(data)];
+    } on SocketException {
+      throw Exception("Pas de connexion Internet.");
+    } on TimeoutException {
+      throw Exception("Le serveur met trop de temps à répondre.");
+    } on FormatException {
+      throw Exception("Réponse invalide du serveur.");
+    } catch (e) {
+      throw Exception("Erreur inattendue : $e");
+    }
   }
 
 
   Future<void> updateorCreateAppelStatus(int adherentId,int coursId, bool status) async {
-    // Exemple, adapte selon ton API
-    final response = await http.post(
-      Uri.parse('$apiUrl/api/adherents/upsert_appel'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'status':status, 'adherentId':adherentId, 'coursId':coursId }),
-    );
-    print("mise a jour appel");
-    print(response.body);
-    if (response.statusCode != 200) {
-      throw Exception('Erreur API');
+    try {
+      // Exemple, adapte selon ton API
+      final response = await http.post(
+        Uri.parse('$apiUrl/api/adherents/upsert_appel'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status':status, 'adherentId':adherentId, 'coursId':coursId }),
+      );
+      print("mise a jour appel");
+      print(response.body);
+      if (response.statusCode != 200) {
+        throw Exception('Erreur API');
+      }
+    } on SocketException {
+      throw Exception("Pas de connexion Internet.");
+    } on TimeoutException {
+      throw Exception("Le serveur met trop de temps à répondre.");
+    } on FormatException {
+      throw Exception("Réponse invalide du serveur.");
+    } catch (e) {
+      throw Exception("Erreur inattendue : $e");
     }
   }
+
 
 
 
@@ -154,7 +179,7 @@ class _CourseCheckListPageState extends State<CourseCheckListPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Erreur: ${snapshot.error}'));
+            return Center(child: Text('Erreur : ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Aucun adhérent trouvé.'));
           }
@@ -170,85 +195,143 @@ class _CourseCheckListPageState extends State<CourseCheckListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
                 Text("${cours[0].dojo!.nom} - ${cours[0].jour} - ${cours[0].heure.substring(0,5)} - ${formattedDate}",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold)),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const <DataColumn>[
-                      DataColumn(
-                        label: Text('Nom', style: TextStyle(fontStyle: FontStyle.italic)),
-                      ),
-                      DataColumn(
-                        label: Text('Prenom', style: TextStyle(fontStyle: FontStyle.italic)),
-                      ),
-                      DataColumn(
-                        label: Text('Action', style: TextStyle(fontStyle: FontStyle.italic)),
-                      ),
-                    ],
-                    rows: adherents_avec_appels.map((adherent_avec_appel) {
-                      return DataRow(
-                        cells: <DataCell>[
-                          DataCell(Text(adherent_avec_appel.adherent.nom)),
-                          DataCell(Text(adherent_avec_appel.adherent.prenom)),
-                          DataCell(Row(
-                            children: [
 
-                              IconButton(
-                                icon: Icon(
-                                  adherent_avec_appel.appel != null && adherent_avec_appel.appel!.status
-                                      ? Icons.check_circle
-                                      : Icons.cancel     ,
-                                  color: adherent_avec_appel.appel != null && adherent_avec_appel.appel!.status
-                                      ? Colors.green
-                                      : Colors.red,
+                const SizedBox(height: 10),
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Rechercher un adhérent',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.blue, width: 1.0),
+                      borderRadius: BorderRadius.circular(10.0),),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      searchQuery = value.toLowerCase();
+                      print(searchQuery);
 
-                                ),
-                                onPressed: () async {
-                                  final ancienStatus = adherent_avec_appel.appel?.status ?? false;
-                                  final bool nouveauStatus = !ancienStatus;
 
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: Builder(
+                      builder: (context) {
+                        List<AdherentAvecAppel> filteredList = adherents_avec_appels.where((item) {
+                          final nom = item.adherent.nom.toLowerCase();
+                          final prenom = item.adherent.prenom.toLowerCase();
+                          return nom.contains(searchQuery) || prenom.contains(searchQuery);
+                        }).toList();
+
+                        filteredList.sort((a, b) {
+                          final aVal = sortColumnIndex == 0 ? a.adherent.nom : a.adherent.prenom;
+                          final bVal = sortColumnIndex == 0 ? b.adherent.nom : b.adherent.prenom;
+                          return sortAsc ? aVal.compareTo(bVal) : bVal.compareTo(aVal);
+                        });
+                        return SizedBox(
+                          width: MediaQuery.of(context).size.width,
+                          child: DataTable(
+                            headingRowColor:WidgetStateColor.resolveWith((states) => Colors.blue),
+                            dataRowColor: WidgetStateColor.resolveWith((states) => Colors.grey.shade200),
+                            columnSpacing: 0,
+                            sortColumnIndex: sortColumnIndex,
+                            sortAscending: sortAsc,
+                            columns: [
+                              DataColumn(
+                                label: Text('Nom', style: TextStyle(fontStyle: FontStyle.italic)),
+                                onSort: (columnIndex, ascending) {
                                   setState(() {
-                                    if (adherent_avec_appel.appel == null) {
-                                      // Si pas encore d'appel → création locale temporaire
-                                      adherent_avec_appel.appel = Appel(
-                                        id: 0, // ou null si non requis par ton modèle
-                                        status: nouveauStatus,
-                                        adherentId: adherent_avec_appel.adherent.id,
-                                        coursId: cours[0].id,
-                                        date: DateTime.now().toIso8601String(), // si utile
-                                      );
-                                    } else {
-                                      // Toggle si appel déjà existant
-                                      adherent_avec_appel.appel!.status = nouveauStatus;
-                                    }
+                                    sortColumnIndex = columnIndex;
+                                    sortAsc = ascending;
                                   });
-
-                                  try {
-                                    // Appel API qui gère création ou update selon existence
-                                     await updateorCreateAppelStatus(
-                                      adherent_avec_appel.adherent.id,
-                                      cours[0].id,
-                                      nouveauStatus,
-                                    );
-
-
-                                  } catch (e) {
-                                    // Revert en cas d'erreur
-                                    setState(() {
-                                      adherent_avec_appel.appel?.status = ancienStatus;
-                                    });
-
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Erreur lors de la mise à jour')),
-                                    );
-                                  }
                                 },
                               ),
+                              DataColumn(
+                                label: Text('Prénom', style: TextStyle(fontStyle: FontStyle.italic)),
+                                onSort: (columnIndex, ascending) {
+                                  setState(() {
+                                    sortColumnIndex = columnIndex;
+                                    sortAsc = ascending;
+                                  });
+                                },
+                              ),
+                              DataColumn(
+                                label: Text('Action', style: TextStyle(fontStyle: FontStyle.italic)),
+                              ),
                             ],
-                          )),
-                        ],
-                      );
-                    }).toList(),
+                            rows: filteredList.map((adherent_avec_appel) {
+                              return DataRow(
+                                cells: <DataCell>[
+                                  DataCell(Text(adherent_avec_appel.adherent.nom)),
+                                  DataCell(Text(adherent_avec_appel.adherent.prenom)),
+                                  DataCell(Column(
+                                    children: [
+
+                                      IconButton(
+                                        icon: Icon(
+                                          adherent_avec_appel.appel != null && adherent_avec_appel.appel!.status
+                                              ? Icons.check_circle
+                                              : Icons.cancel     ,
+                                          color: adherent_avec_appel.appel != null && adherent_avec_appel.appel!.status
+                                              ? Colors.green
+                                              : Colors.red,
+
+                                        ),
+                                        onPressed: () async {
+                                          final ancienStatus = adherent_avec_appel.appel?.status ?? false;
+                                          final bool nouveauStatus = !ancienStatus;
+
+                                          setState(() {
+                                            if (adherent_avec_appel.appel == null) {
+                                              // Si pas encore d'appel → création locale temporaire
+                                              adherent_avec_appel.appel = Appel(
+                                                id: 0, // ou null si non requis par ton modèle
+                                                status: nouveauStatus,
+                                                adherentId: adherent_avec_appel.adherent.id,
+                                                coursId: cours[0].id,
+                                                date: DateTime.now().toIso8601String(), // si utile
+                                              );
+                                            } else {
+                                              // Toggle si appel déjà existant
+                                              adherent_avec_appel.appel!.status = nouveauStatus;
+                                            }
+                                          });
+
+                                          try {
+                                            // Appel API qui gère création ou update selon existence
+                                             await updateorCreateAppelStatus(
+                                              adherent_avec_appel.adherent.id,
+                                              cours[0].id,
+                                              nouveauStatus,
+                                            );
+
+
+                                          } catch (e) {
+                                            // Revert en cas d'erreur
+                                            setState(() {
+                                              adherent_avec_appel.appel?.status = ancienStatus;
+                                            });
+
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Erreur lors de la mise à jour')),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  )),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      }
+                    ),
                   ),
                 ),
               ],

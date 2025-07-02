@@ -1,7 +1,9 @@
 
 
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:appli_ojn/Models/Utilisateur.dart';
 import 'package:appli_ojn/Pages/Home.dart';
@@ -39,10 +41,20 @@ class _CoursesListPageState extends State<CoursesListPage> {
   }
 
   Future<Utilisateur> fetchUtilisateur(String apiUrl,int userId) async {
-    final response = await http.get(Uri.parse("$apiUrl/api/auth/get_all_teacher_datas/$userId"));
-    final data = jsonDecode(response.body) ;
-    print(data);
-    return  Utilisateur.fromJson(data);
+    try {
+      final response = await http.get(Uri.parse("$apiUrl/api/auth/get_all_teacher_datas/$userId"));
+      final data = jsonDecode(response.body) ;
+      print(data);
+      return  Utilisateur.fromJson(data);
+    } on SocketException {
+      throw Exception("Pas de connexion Internet.");
+    } on TimeoutException {
+      throw Exception("Le serveur met trop de temps à répondre.");
+    } on FormatException {
+      throw Exception("Réponse invalide du serveur.");
+    } catch (e) {
+      throw Exception("Erreur inattendue : $e");
+    }
   }
 
   @override
@@ -131,7 +143,8 @@ class _CoursesListPageState extends State<CoursesListPage> {
                     inputDecoration: InputDecoration(
                       labelText: "Rechercher un cours",
                       fillColor: Colors.white,
-                      focusedBorder: OutlineInputBorder(
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
                         borderSide: const BorderSide(color: Colors.blue, width: 1.0),
                         borderRadius: BorderRadius.circular(10.0),
                       ),

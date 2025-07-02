@@ -40,6 +40,7 @@ dependencies:
   path: ^1.9.0
   searchable_listview: ^2.19.0
   date_format: ^2.0.9
+  intl: ^0.20.2
 
 
 dev_dependencies:

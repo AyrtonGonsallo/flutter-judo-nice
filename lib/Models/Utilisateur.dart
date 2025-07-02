@@ -7,7 +7,10 @@ class Utilisateur {
   final String nom;
   final String prenom;
   final String email;
-  final String? password;
+  final String? categorie_age;
+  final String? date_inscription;
+  final String? telephone;
+
   final int? roleId;
   final int dojoId;
   final Role? role;
@@ -19,7 +22,9 @@ class Utilisateur {
     required this.nom,
     required this.prenom,
     required this.email,
-    this.password,
+    this.categorie_age,
+    this.date_inscription,
+    this.telephone,
     this.roleId,
     required this.dojoId,
     this.role,
@@ -33,7 +38,9 @@ class Utilisateur {
       nom: json['nom'] ?? '',
       prenom: json['prenom'] ?? '',
       email: json['email'] ?? '',
-      password: json['password'], // nullable → ok si null ou absent
+      categorie_age: json['categorie_age'], // nullable → ok si null ou absent
+      date_inscription: json['date_inscription'],
+      telephone: json['telephone'],
       roleId: json['roleId'],
       dojoId: json['dojoId'] ?? 0,
       role: json['Role'] != null ? Role.fromJson(json['Role']) : null,
